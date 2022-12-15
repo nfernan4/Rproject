@@ -1,38 +1,81 @@
-#Age distribution histogram of patients (this goes is supportingFunctions.R script)
-#Reading in data
-allData<-read.csv(file = "allData.csv", header = TRUE)
+#Analysis R script---------------------
 
-#The data had strangely high ages that were likely errors; this corrects them
-removed_strange_ages<-allData[allData$age <120,]
+#create source path to RProject2022_Submission.R script
+setwd(C:/Users/natal/Desktop/shell-lesson-data/shell-lesson-data/Rproject)
+source("C:/Users/natal/Desktop/shell-lesson-data/shell-lesson-data/Rproject/RProject2022_Submission.R")
 
-#finding entries with a marker present
-sick<-subset(removed_strange_ages, marker01!=0 | marker02!=0 |marker03!=0 |marker04!=0 |marker05!=0 |marker06!=0 |marker07!=0 |marker08!=0 | marker09!=0 |marker10!=0)
-
-#visualize age distribution 
-
-# Load the ggplot2 package
-library(ggplot2)
-ggplot()
-
-# Create the histogram using the ggplot function and the geom_histogram function
-ggplot(sick, aes(x = sick$age)) +
-  geom_histogram(binwidth = 10, center = 5) +
-  xlab("Age Groups") +
-  ylab("Number of People Infected") +
-  xlim(0,120) +
-  scale_x_continuous(breaks =seq(0,120,10)) +
-  scale_y_continuous(breaks =seq(0,15000,1250)) 
-
-#analysis.R script
-
-#create source path to supportingFunctions.R script
-source("C:/Users/natal/Desktop/shell-lesson-data/shell-lesson-data/RProject/RProject2022_Submission.R")
-
-#Load functions in supportingFunctions.R file
-source("RProject2022_Submission.R")
+#Load functions in RProject2022_Submission.R file
+source(RProject2022_Submission.R)
 
 #Compile all data into single CSV by calling function
 compiledData()
 
 
-#Process data 
+#Graphing------------------------------
+#Reading in data
+allData<-read.csv(file = "allData.csv", header = TRUE)
+library(ggplot2)
+ggplot()
+
+#The data had strangely high ages that were likely errors; this corrects them
+removed_strange_ages<-allData[allData$age <110,]
+
+#finding entries with a marker present; removes any entries that weren't infected
+sick<-subset(removed_strange_ages, marker01!=0 | marker02!=0 |marker03!=0 |marker04!=0 |marker05!=0 |marker06!=0 |marker07!=0 |marker08!=0 | marker09!=0 |marker10!=0)
+
+#ggplotting cases as a function of time
+#sub-setting and adjusting data
+Xdata<- sick[sick$country=="X",]
+Ydata<-sick[sick$country=="Y",]
+
+Yno<-seq_along(Ydata$dayofYear)
+Xno<-seq_along(Xdata$country)
+sick$Casenum<-append(Xno,Yno, after = length(Xno))
+
+#Plot Cumulative cases in each country against time
+ggplot(data = sick,
+       aes(x=sick$dayofYear, y=sick$Casenum, colour = country))+
+  geom_smooth()+
+  xlab("Day of the Year") +
+  ylab("Running Case Total")+
+  theme_classic()
+
+#Plot new cases against time
+ggplot(data = sick,
+       aes(x=dayofYear))+
+  geom_bar(position="dodge", aes( fill = country), show.legend = FALSE)+
+  xlab("Day of the Year") +
+  ylab("New Cases Per Day")+
+  facet_grid(.~country)+
+  theme_classic()
+
+#Marker comparison by country
+#subset data
+XmarkerData<-data.frame( MarkerNum = colnames(Xdata)[3:12],
+                         MarkerSum = colSums(Xdata[,3:12]),
+                         Country = Xdata[1:10,13])
+rownames(XmarkerData)<-1:nrow(XmarkerData)
+YmarkerData<-data.frame( MarkerNum = colnames(Ydata)[3:12],
+                         MarkerSum = colSums(Ydata[,3:12]),
+                         Country = Ydata[1:10,13])
+rownames(YmarkerData)<-1:nrow(YmarkerData)
+MarkerforPlot<- rbind(XmarkerData,YmarkerData)
+#plot
+ggplot(data = MarkerforPlot,
+       aes(x=Country, y=MarkerSum, fill=MarkerNum))+
+  geom_bar(stat="identity", position="dodge")+
+  xlab("Country") +
+  ylab("Marker Abundance")+
+  theme_minimal()
+
+
+
+
+
+
+
+
+
+
+
+
